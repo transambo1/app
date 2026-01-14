@@ -103,6 +103,7 @@ const styles = StyleSheet.create({
     },
     friendText: { color: 'white', fontWeight: '600' },
     iconCircle: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+    buttonText: { color: '#000', fontWeight: 'bold' },
 
     cameraContainer: {
         width: '94%',

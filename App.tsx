@@ -1,20 +1,20 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text } from 'react-native';
+import { auth } from './src/services/firebase'; // Kiểm tra đúng đường dẫn file
 
 export default function App() {
+  useEffect(() => {
+    // Kiểm tra xem đối tượng auth có tồn tại không
+    if (auth) {
+      console.log("✅ Kết nối Firebase thành công!");
+    } else {
+      console.log("❌ Kết nối Firebase thất bại.");
+    }
+  }, []);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Kiểm tra Firebase trong Terminal nhé!</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

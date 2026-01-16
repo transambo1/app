@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons'; // Thư viện icon có sẵn trong Expo
 
-export default function CameraScreen() {
+export default function CameraScreen({ onProfilePress }: { onProfilePress?: () => void }) {
     const [permission, requestPermission] = useCameraPermissions();
     const [facing, setFacing] = useState<'front' | 'back'>('front'); // Mặc định cam trước như Locket
     const cameraRef = useRef<any>(null);
@@ -27,7 +28,7 @@ export default function CameraScreen() {
         <View style={styles.container}>
             {/* Header: Icon Profile và Bạn bè */}
             <SafeAreaView style={styles.header}>
-                <TouchableOpacity style={styles.iconCircle}>
+                <TouchableOpacity style={styles.iconCircle} onPress={onProfilePress}>
                     <Ionicons name="person-circle-outline" size={30} color="white" />
                 </TouchableOpacity>
 
@@ -48,13 +49,12 @@ export default function CameraScreen() {
                     facing={facing}
                     ref={cameraRef}
                     responsiveOrientationWhenOrientationLocked
-                >
-                    {/* Icon Flash và Zoom trong Camera */}
-                    <View style={styles.cameraInsideIcons}>
-                        <Ionicons name="flash-outline" size={24} color="white" />
-                        <View style={styles.zoomBadge}><Text style={styles.zoomText}>1x</Text></View>
-                    </View>
-                </CameraView>
+                />
+                {/* Icon Flash và Zoom trong Camera */}
+                <View style={styles.cameraInsideIcons}>
+                    <Ionicons name="flash-outline" size={24} color="white" />
+                    <View style={styles.zoomBadge}><Text style={styles.zoomText}>1x</Text></View>
+                </View>
             </View>
 
             {/* Bottom: Nút Chụp và Lịch sử */}
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     camera: { flex: 1 },
-    cameraInsideIcons: { flexDirection: 'row', justifyContent: 'space-between', padding: 20 },
+    cameraInsideIcons: { position: 'absolute', top: 20, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between', zIndex: 5 },
     zoomBadge: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 5, borderRadius: 15, width: 35, alignItems: 'center' },
     zoomText: { color: 'white', fontSize: 12 },
 

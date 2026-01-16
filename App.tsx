@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth } from './src/services/firebase';
 import AuthScreen from './src/screens/AuthScreen';
 import CameraScreen from './src/screens/CameraScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [currentScreen, setCurrentScreen] = useState<'camera' | 'profile'>('camera');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -29,18 +31,18 @@ export default function App() {
     return <AuthScreen />;
   }
 
-  // 2. Nếu đã đăng nhập -> Hiện Camera và nút Đăng xuất nhỏ gọn
+  // 2. Nếu đã đăng nhập -> Hiện Camera hoặc Profile
+  if (currentScreen === 'profile') {
+    return (
+      <View style={styles.container}>
+        <ProfileScreen onClose={() => setCurrentScreen('camera')} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* Hiển thị Camera làm nền chính */}
-      <CameraScreen />
-
-      {/* Nút Đăng xuất đặt ở góc trên bên phải (giống icon profile trong Locket) */}
-      <SafeAreaView style={styles.overlayHeader}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Đăng xuất</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+      <CameraScreen onProfilePress={() => setCurrentScreen('profile')} />
     </View>
   );
 }
@@ -49,22 +51,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  overlayHeader: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    zIndex: 10, // Để nút luôn nằm trên Camera
-  },
-  logoutButton: {
-    backgroundColor: 'rgba(255, 68, 68, 0.7)', // Màu đỏ hơi trong suốt
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-  },
-  logoutText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 12
   },
 });

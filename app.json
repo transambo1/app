@@ -11,8 +11,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Cho phép Locket Clone truy cập camera để chụp ảnh.",
-          "microphonePermission": "Cho phép Locket Clone truy cập micro."
+          "cameraPermission": "Cho phép  truy cập camera để chụp ảnh.",
+          "microphonePermission": "Cho phép  truy cập micro."
         }
       ]
     ],

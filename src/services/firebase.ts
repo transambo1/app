@@ -16,7 +16,7 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-let auth: any; // Thêm : any ở đây để fix lỗi "implicitly has an any type" ở các file khác
+let auth: any;
 try {
     auth = initializeAuth(app, {
         persistence: (getReactNativePersistence as any)(ReactNativeAsyncStorage)

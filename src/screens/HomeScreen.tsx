@@ -237,6 +237,7 @@ export default function HomeScreen({ navigation }: any) {
                             navigation={navigation}
                             onPressGrid={() => handleGridPress(index)}
                             friends={friends}
+                            userRedux={userRedux}
                         />
                     )}
                     numColumns={viewMode === 'grid' ? 3 : 1}

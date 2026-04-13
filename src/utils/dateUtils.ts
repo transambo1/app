@@ -1,4 +1,4 @@
-// src/utils/dateUtils.ts
+
 
 /**
  * Hàm 1: Định dạng thời gian cho tin nhắn cuối ở danh sách Inbox

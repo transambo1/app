@@ -16,35 +16,40 @@ import { formatChatHeaderTime } from '../utils/dateUtils';
 import * as Notifications from 'expo-notifications';
 
 export default function ChatDetailScreen({ route, navigation }: any) {
-    // 1. Nhận params (Thành kiểm tra xem bên ChatList đã truyền đúng key 'avatar' chưa nhé)
     const { friendId, friendName, avatar } = route.params;
 
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showTimeId, setShowTimeId] = useState<string | null>(null);
+
+    // Thêm 1 state để kích hoạt việc kiểm tra Online/Offline mỗi 30s
+    const [currentTime, setCurrentTime] = useState(Date.now());
     const inputRef = useRef<TextInput>(null);
 
     const userRedux = useSelector((state: RootState) => state.user.info);
-    // Lấy list friends từ Redux để cập nhật trạng thái Online Real-time
     const friends = useSelector((state: RootState) => state.friends.list);
 
-    // 2. Tìm thông tin bạn bè mới nhất (bao gồm lastSeen) từ Redux
+    // Tìm thông tin bạn bè mới nhất từ Redux
     const friendInfo = useMemo(() => {
         return friends.find((f: any) => f.uid === friendId) || { name: friendName, avatar: avatar };
     }, [friends, friendId]);
 
-    // 3. Tính toán trạng thái Online (Dưới 5 phút)
-    // Trong ChatDetailScreen
+    // LOGIC ONLINE REALTIME (Tự động cập nhật mỗi 30s)
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(Date.now()), 30000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // Tính toán Online dựa vào currentTime (bỏ mảng phụ thuộc cứng nhắc đi)
     const isOnline = useMemo(() => {
         if (!friendInfo.lastActive) return false;
         try {
-            const lastActiveDate = friendInfo.lastActive.toDate();
-            const now = new Date();
-            const diffInMinutes = (now.getTime() - lastActiveDate.getTime()) / 1000 / 60;
+            const lastActiveDate = friendInfo.lastActive.toDate().getTime();
+            const diffInMinutes = (currentTime - lastActiveDate) / 1000 / 60;
             return diffInMinutes < 5;
         } catch (e) { return false; }
-    }, [friendInfo.lastActive]);
+    }, [friendInfo.lastActive, currentTime]);
 
     const chatId = useMemo(() => {
         if (!userRedux?.uid) return '';
@@ -65,10 +70,16 @@ export default function ChatDetailScreen({ route, navigation }: any) {
 
         const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const msgList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Sửa lỗi: Lọc bỏ các tin nhắn bị null thời gian trong tích tắc đầu tiên
+            const msgList = snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data(),
+                createdAt: d.data().createdAt || { toDate: () => new Date() } // Fallback an toàn
+            }));
             setMessages(msgList);
             setLoading(false);
         });
+
         return () => unsubscribe();
     }, [chatId, userRedux?.uid]);
 
@@ -81,7 +92,7 @@ export default function ChatDetailScreen({ route, navigation }: any) {
             id: Date.now().toString(),
             text: textToSend,
             senderId: userRedux.uid,
-            createdAt: new Date(),
+            createdAt: { toDate: () => new Date() }, // Fake Date an toàn
             isPending: true
         };
         setMessages(prev => [tempMsg, ...prev]);
@@ -109,7 +120,8 @@ export default function ChatDetailScreen({ route, navigation }: any) {
 
     const renderItem = useCallback(({ item, index }: any) => {
         const isMine = item.senderId === userRedux?.uid;
-        const msgDate = item.createdAt?.toDate ? item.createdAt.toDate() : new Date();
+        // Do lúc nãy mình fallback an toàn nên khúc này lúc nào cũng chạy tốt
+        const msgDate = item.createdAt.toDate();
 
         let showDateHeader = false;
         if (index === messages.length - 1) { showDateHeader = true; }
@@ -140,7 +152,7 @@ export default function ChatDetailScreen({ route, navigation }: any) {
     }, [userRedux?.uid, showTimeId, messages]);
 
     return (
-        <SafeAreaView style={styles.container} >
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -171,7 +183,7 @@ export default function ChatDetailScreen({ route, navigation }: any) {
                 <View style={styles.inputArea}>
                     <TextInput ref={inputRef} style={styles.input} value={message} onChangeText={setMessage} placeholder="Nhắn tin...." multiline />
                     <TouchableOpacity style={[styles.sendBtn, !message.trim() && { opacity: 0.5 }]} onPress={handleSend} disabled={!message.trim()}>
-                        <Ionicons name="send" size={20} color="#fff" />
+                        <Ionicons name="send" size={30} color="#002fff" />
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
@@ -179,6 +191,7 @@ export default function ChatDetailScreen({ route, navigation }: any) {
     );
 }
 
+// ... styles giữ nguyên
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#fff' },
     header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10, borderBottomWidth: 0.5, borderColor: '#eee' },
@@ -201,7 +214,7 @@ const styles = StyleSheet.create({
     dateHeader: { alignSelf: 'center', color: '#999', fontSize: 12, fontWeight: '600', marginVertical: 20, backgroundColor: '#f5f5f5', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, overflow: 'hidden' },
     msgTime: { fontSize: 10, color: '#aaa', marginTop: 4, paddingHorizontal: 4 },
     pendingText: { fontSize: 10, color: '#999', alignSelf: 'flex-end', marginTop: 2 },
-    inputArea: { flexDirection: 'row', padding: 10, alignItems: 'flex-end', borderTopWidth: 0.5, borderColor: '#eee', backgroundColor: '#fff' },
+    inputArea: { flexDirection: 'row', padding: 10, alignItems: 'flex-end', borderTopWidth: 0.5, marginBottom: 10, borderColor: '#eee', backgroundColor: '#fff' },
     input: { flex: 1, backgroundColor: '#f0f2f5', borderRadius: 20, paddingHorizontal: 15, paddingVertical: 8, fontSize: 16, maxHeight: 100 },
-    sendBtn: { backgroundColor: '#4fd1c5', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginLeft: 10 }
+    sendBtn: { backgroundColor: '#ffffff', width: 30, height: 30, borderRadius: 20, marginBottom: 7, justifyContent: 'center', alignItems: 'center', marginLeft: 10, transform: [{ rotate: '342deg' },] }
 });

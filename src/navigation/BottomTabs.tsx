@@ -23,7 +23,10 @@ export default function BottomTabs() {
         tabBarInactiveTintColor: '#999',
         // Hiệu ứng mờ nền cho giống iOS xịn
         tabBarBackground: () => (
-          <BlurView intensity={1} style={StyleSheet.absoluteFill} tint="light" />
+          <BlurView intensity={20} style={[
+            StyleSheet.absoluteFill,
+            { borderRadius: 40, overflow: 'hidden' } // <-- THÊM ĐOẠN NÀY ĐỂ BO GÓC BLURVIEW
+          ]} tint="light" />
         ),
       }}
     >
@@ -58,7 +61,7 @@ export default function BottomTabs() {
           tabBarStyle: { display: 'none' },
           tabBarIcon: () => (
             <View style={styles.cameraButton}>
-              <Ionicons name="camera" size={30} color="white" />
+              <Ionicons name="camera" size={30} color="grey" />
             </View>
           ),
         }}
@@ -117,12 +120,12 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 32.5,
-    backgroundColor: '#4fd1c5',
+    backgroundColor: '#95f4eae7',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#fff', // Tạo viền trắng bao quanh nút cho tách biệt
-    shadowColor: '#4fd1c5',
+    borderColor: 'rgba(167, 166, 166, 0.7)', // Tạo viền trắng bao quanh nút cho tách biệt
+    shadowColor: '#addbff',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.4,
     shadowRadius: 10,
@@ -138,7 +141,8 @@ const styles = StyleSheet.create({
     width: 66,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(59, 191, 178, 0.8)',
+    backgroundColor: 'rgba(138, 138, 138, 0.8)',
+    //backgroundColor: 'rgba(59, 191, 178, 0.8)',
   }
 });
 

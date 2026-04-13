@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { auth, db } from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import { useDispatch } from 'react-redux';
 import { setUserData, clearUser } from '../store/slices/userSlice';
 import { setFriends, clearFriends } from '../store/slices/friendSlice';
@@ -14,12 +14,16 @@ export const useAppSync = () => {
     useEffect(() => {
         const unsubAuth = onAuthStateChanged(auth, (user) => {
             if (user) {
-                // --- 1. Lấy data User & Bạn bè (Đã sửa lỗi giới hạn 10 bạn bè) ---
-                const unsubData = onSnapshot(doc(db, "users", user.uid), async (snap) => {
+                // Biến cục bộ lưu trữ các hàm tắt theo dõi bạn bè
+                let unsubsFriendsList: any[] = [];
+
+                // --- 1. Lấy data User & Bạn bè (REALTIME) ---
+                const unsubData = onSnapshot(doc(db, "users", user.uid), (snap) => {
                     if (snap.exists()) {
                         const data = snap.data();
                         const friendIds = data.friends || [];
 
+                        // Cập nhật thông tin của chính mình
                         dispatch(setUserData({
                             uid: user.uid,
                             name: data.name || "Người dùng",
@@ -28,11 +32,14 @@ export const useAppSync = () => {
                             email: user.email || ""
                         }));
 
-                        // --- FIX LỖI GIỚI HẠN 10 PHẦN TỬ CỦA FIREBASE Ở ĐÂY ---
+                        // Dọn dẹp các luồng lắng nghe cũ trước khi tạo mới (tránh rò rỉ bộ nhớ)
+                        unsubsFriendsList.forEach(unsub => unsub());
+                        unsubsFriendsList = [];
+
                         if (friendIds.length > 0) {
                             try {
-                                // Hàm chặt nhỏ mảng thành các cụm 10 người
-                                const chunkArray = (array: any[], size: number) => {
+                                // Hàm chặt nhỏ mảng thành các cụm 10 người để vượt giới hạn Firebase
+                                const chunkArray = (array: any, size: any) => {
                                     const chunked = [];
                                     for (let i = 0; i < array.length; i += size) {
                                         chunked.push(array.slice(i, i + size));
@@ -40,33 +47,32 @@ export const useAppSync = () => {
                                     return chunked;
                                 };
 
-                                // Chia mảng friendIds ra làm nhiều cụm, mỗi cụm tối đa 10 ID
                                 const chunks = chunkArray(friendIds, 10);
+                                const friendsMap = new Map();
 
-                                // Gửi TẤT CẢ các truy vấn lên Firebase cùng một lúc
-                                const fetchPromises = chunks.map((chunk) => {
+                                // Mở luồng lắng nghe cho từng cụm bạn bè
+                                chunks.forEach((chunk) => {
                                     const q = query(collection(db, "users"), where("__name__", "in", chunk));
-                                    return getDocs(q);
-                                });
 
-                                // Đợi tất cả truy vấn báo cáo kết quả về
-                                const snapshots = await Promise.all(fetchPromises);
-
-                                // Gom tất cả dữ liệu lại thành 1 danh sách
-                                const detailedFriends: any[] = [];
-                                snapshots.forEach((snapChunk) => {
-                                    snapChunk.docs.forEach((doc) => {
-                                        detailedFriends.push({
-                                            uid: doc.id,
-                                            id: doc.id,
-                                            name: doc.data().name || "Bạn bè",
-                                            avatar: doc.data().avatar || ""
+                                    const unsubFriendChunk = onSnapshot(q, (snapshot) => {
+                                        snapshot.docs.forEach((docFriend) => {
+                                            friendsMap.set(docFriend.id, {
+                                                uid: docFriend.id,
+                                                id: docFriend.id,
+                                                name: docFriend.data().name || "Bạn bè",
+                                                avatar: docFriend.data().avatar || "",
+                                                lastActive: docFriend.data().lastActive || null // Hút trạng thái online
+                                            });
                                         });
-                                    });
-                                });
 
-                                // Đẩy danh sách hoàn chỉnh lên Redux
-                                dispatch(setFriends(detailedFriends));
+                                        // Gom Map thành mảng và đẩy lên Redux
+                                        const updatedFriendsList = Array.from(friendsMap.values());
+                                        dispatch(setFriends(updatedFriendsList));
+                                    });
+
+                                    // Lưu lại hàm tắt luồng này
+                                    unsubsFriendsList.push(unsubFriendChunk);
+                                });
 
                             } catch (error) {
                                 console.error("Lỗi khi tải danh sách bạn bè:", error);
@@ -96,10 +102,8 @@ export const useAppSync = () => {
                             const isNewIncoming = chatData.isSeen === false && chatData.lastSenderId !== user.uid;
 
                             if (isNewIncoming) {
-                                // Tìm tên người gửi trong mảng usersInfo
                                 const sender = chatData.usersInfo?.find((u: any) => u.uid !== user.uid);
 
-                                // Bắn thông báo ra màn hình
                                 Notifications.scheduleNotificationAsync({
                                     content: {
                                         title: `💬 ${sender?.name || "Tin nhắn mới"}`,
@@ -114,15 +118,14 @@ export const useAppSync = () => {
                     });
 
                     // TÍNH TỔNG SỐ TIN CHƯA ĐỌC CHO BADGE
-                    const chatList = snapshot.docs.map(doc => {
-                        const data = doc.data();
-                        // Nếu mình là người nhận và chưa xem thì tính là 1 tin chưa đọc
+                    const chatList = snapshot.docs.map(docChat => {
+                        const data = docChat.data();
                         if (data.isSeen === false && data.lastSenderId !== user.uid) {
                             totalUnreadCount++;
                         }
 
                         return {
-                            id: doc.id,
+                            id: docChat.id,
                             ...data,
                             displayTime: data.updatedAt?.toDate()
                                 ? data.updatedAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -130,23 +133,25 @@ export const useAppSync = () => {
                         };
                     });
 
-                    // Cập nhật số Badge trên icon App (Số đỏ đỏ ngoài icon)
                     Notifications.setBadgeCountAsync(totalUnreadCount);
-
                     dispatch(setInbox(chatList));
                 });
 
+                // --- 3. DỌN DẸP KHI LOGOUT HOẶC ĐÓNG APP ---
                 return () => {
                     unsubData();
                     unsubChats();
+                    // Tắt toàn bộ luồng nghe lén bạn bè
+                    unsubsFriendsList.forEach(unsub => unsub());
                 };
 
             } else {
                 dispatch(clearUser());
                 dispatch(clearFriends());
-                Notifications.setBadgeCountAsync(0); // Logout thì xóa Badge
+                Notifications.setBadgeCountAsync(0);
             }
         });
+
         return () => unsubAuth();
     }, [dispatch]);
 };

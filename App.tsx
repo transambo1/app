@@ -30,13 +30,16 @@ function AppContent() {
   useAppSync();
 
   // 2. Xin quyền thông báo khi vừa vào App
+  // 2. Xin quyền thông báo khi vừa vào App
   useEffect(() => {
     updatePresence();
+
+    // Đặt lịch 2 phút (120000ms) cập nhật trạng thái online 1 lần
     const interval = setInterval(() => {
       updatePresence();
     }, 120000);
 
-    return () => clearInterval(interval);
+    // CHUYỂN TOÀN BỘ HÀM NÀY LÊN TRÊN LỆNH RETURN
     async function registerForPushNotifications() {
       if (Device.isDevice) {
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -53,7 +56,7 @@ function AppContent() {
         console.log('Phải dùng máy thật mới test được thông báo Thành nhé!');
       }
 
-      // Cấu hình cho Android (rung, màu sắc đèn led)
+      // Cấu hình cho Android
       if (Platform.OS === 'android') {
         Notifications.setNotificationChannelAsync('default', {
           name: 'default',
@@ -64,7 +67,11 @@ function AppContent() {
       }
     }
 
+    // GỌI HÀM XIN QUYỀN
     registerForPushNotifications();
+
+    // DỜI DÒNG NÀY XUỐNG DƯỚI CÙNG ĐỂ KHÔNG CHẶN ĐỨNG CODE
+    return () => clearInterval(interval);
   }, []);
 
   const { info, loading } = useSelector((state: RootState) => state.user);

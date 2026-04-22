@@ -9,6 +9,16 @@ import { updatePresence } from './src/hooks/userActive';
 import AuthScreen from "./src/screens/AuthScreen";
 import BottomTabs from "./src/navigation/BottomTabs";
 import ChatDetailScreen from './src/screens/ChatDetailScreen';
+
+import CreateExplorePlacesScreen from './src/screens/trip/CreateExplorePlacesScreen';
+import TripPlanScreen from './src/screens/trip/TripPlanScreen';
+import ExplorePlacesScreen from './src/screens/trip/ExplorePlacesScreen';
+import TripFriendsScreen from './src/screens/trip/TripFriendsScreen';
+import YourAdventuresScreen from './src/screens/trip/YourAdventuresScreen';
+import SelectDatesScreen from './src/screens/trip/SelectDatesScreen';
+import ReviewAdventureScreen from './src/screens/trip/ReviewAdventureScreen';
+
+
 import { RootState } from './src/store';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
@@ -92,6 +102,14 @@ function AppContent() {
         <>
           <Stack.Screen name="MainTabs" component={BottomTabs} />
           <Stack.Screen name="Chat" component={ChatDetailScreen} />
+          <Stack.Screen name="Adventures" component={YourAdventuresScreen} />
+          <Stack.Screen name="CreateExplorePlaces" component={CreateExplorePlacesScreen} />
+          <Stack.Screen name="Explore" component={ExplorePlacesScreen} />
+          <Stack.Screen name="Itinerary" component={TripPlanScreen} />
+          <Stack.Screen name="Friends" component={TripFriendsScreen} />
+          <Stack.Screen name="SelectDates" component={SelectDatesScreen} />
+          <Stack.Screen name="ReviewAdventure" component={ReviewAdventureScreen} />
+
         </>
       )}
     </Stack.Navigator>

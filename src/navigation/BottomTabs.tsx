@@ -6,6 +6,8 @@ import { BlurView } from 'expo-blur'; // Cần cài thêm expo-blur để có hi
 
 import HomeScreen from '../screens/HomeScreen';
 import DiscoverScreen from '../screens/DiscoverScreen';
+
+import YourAdventuresScreen from '../screens/trip/YourAdventuresScreen';
 import AtlasScreen from '../screens/AtlasScreen';
 import CameraScreen from '../screens/CameraScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -44,7 +46,7 @@ export default function BottomTabs() {
 
       <Tab.Screen
         name="Discover"
-        component={DiscoverScreen}
+        component={YourAdventuresScreen}
         options={{
           tabBarIcon: ({ focused }) => (
             <View style={focused ? styles.activeTab : null}>

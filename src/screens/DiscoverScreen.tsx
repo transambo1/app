@@ -4,6 +4,7 @@ import {
     ActivityIndicator, Alert, ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { db, auth } from "../services/firebase";
@@ -13,6 +14,7 @@ import {
 } from "firebase/firestore";
 
 export default function DiscoverScreen() {
+    const navigation = useNavigation<any>();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
@@ -189,6 +191,16 @@ export default function DiscoverScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+            <View style={{ paddingHorizontal: 20, marginTop: 15 }}>
+                <TouchableOpacity
+                    style={{ backgroundColor: '#196163', padding: 15, borderRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, elevation: 3 }}
+                    onPress={() => navigation.navigate('TripPlanner')}
+                >
+                    <Ionicons name="map" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Digital Concierge / Trip Planner</Text>
+                </TouchableOpacity>
+            </View>
+
             <View style={styles.searchHeader}>
                 <Ionicons name="search" size={20} color="#999" />
                 <TextInput style={styles.input} placeholder="Tìm bạn mới..." value={searchQuery} onChangeText={handleSearch} />
